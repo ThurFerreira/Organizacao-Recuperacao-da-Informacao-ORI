@@ -1,2 +1,0 @@
-/home/arthur/ORI/lorem1.txt
-/home/arthur/ORI/lorem2.txt
