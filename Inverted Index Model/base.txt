@@ -1,0 +1,2 @@
+/home/arthur/ORI/Inverted Index Model/lorem1.txt
+/home/arthur/ORI/Inverted Index Model/lorem2.txt
