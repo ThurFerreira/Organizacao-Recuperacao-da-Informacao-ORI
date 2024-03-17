@@ -1,6 +1,7 @@
 import sys
 import spacy
 
+nlp = spacy.load("pt_core_news_lg")
 invertedIndexArray = {}
 
 class TermCount: #z
@@ -9,10 +10,10 @@ class TermCount: #z
         self.qtdTermos = qtdTermos
 
     def __str__(self):
-        return f"({self.documento},{self.qtdTermos})"
+        return f"{self.documento},{self.qtdTermos}"
     
     def toString(self):
-        return f"({self.documento},{self.qtdTermos})"
+        return f"{self.documento},{self.qtdTermos} "
 
 
 class InvertedIndexLine: #y
@@ -35,7 +36,7 @@ def splitWords(string):
     return string.split(' ');
 
 def removeSeparators(frase):
-    separators = ".,!?"
+    separators = ".,!? "
     frase = ["".join(caracter for caracter in palavra if caracter not in separators) for palavra in frase.split()]
     
     for i in range(len(frase)-1):
@@ -45,7 +46,6 @@ def removeSeparators(frase):
     return frase
 
 def removeStopwords(frase):
-    nlp = spacy.load("pt_core_news_sm")
     stopwords = nlp.Defaults.stop_words
     doc = nlp(' '.join(frase))
     frase = [token.text for token in doc if not token.is_stop]
@@ -57,11 +57,27 @@ def readFile(filePath):
         content = file.read()
     return content
 
+def lemmatizeText(text):
+    doc = nlp(text)
+    lemmatizedText = []
+
+    for token in doc:
+
+        if token.pos_ == "VERB":
+            #a biblioteca spacy está definindo "engracada" como um verbo
+            lemmatizedText.append(token.lemma_)
+        else:
+            lemmatizedText.append(token.text)
+
+    return ' '.join(lemmatizedText)
+
+
 def treatText(text):
     noSeparator = removeSeparators(text)
     noStopWords = removeStopwords(noSeparator)
-
-    return splitWords(noStopWords)
+    lemmatizedText = lemmatizeText(noStopWords)
+    
+    return splitWords(lemmatizedText)
 
 def getInvertedIndex(text, fileNumber):
     currentArrayIndex = 0
@@ -102,9 +118,10 @@ def separateFromDocuments(currentWord, termCount, currentFileNumber):
         newLine.addNewInvertedIndex(termCount)
         invertedIndexArray[currentWord] = newLine
 
-def printAll():
-    for line in invertedIndexArray.values():
-        print(line.printLine())
+def generateFile():
+    with open('indice.txt', 'w') as file:
+        for line in invertedIndexArray.values():
+            file.write(line.printLine() + '\n')
 
 def main():
     args = sys.argv
@@ -117,6 +134,6 @@ def main():
         getInvertedIndex(treatedText, fileNumber)
         fileNumber += 1
     
-    printAll()
+    generateFile()
 
 main()
