@@ -1,2 +1,3 @@
-/home/arthur/ORI/Inverted Index Model/lorem1.txt
-/home/arthur/ORI/Inverted Index Model/lorem2.txt
+/home/artu/Organizacao-Recuperacao-da-Informacao-ORI/Inverted Index Model/lorem1.txt
+/home/artu/Organizacao-Recuperacao-da-Informacao-ORI/Inverted Index Model/lorem2.txt
+/home/artu/Organizacao-Recuperacao-da-Informacao-ORI/Inverted Index Model/lorem3.txt

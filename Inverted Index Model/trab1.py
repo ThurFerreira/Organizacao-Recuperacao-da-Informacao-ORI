@@ -1,6 +1,36 @@
 import sys
 import spacy
 
+invertedIndexArray = {}
+
+class TermCount: #z
+    def __init__(self, documento, qtdTermos):
+        self.documento = documento
+        self.qtdTermos = qtdTermos
+
+    def __str__(self):
+        return f"({self.documento},{self.qtdTermos})"
+    
+    def toString(self):
+        return f"({self.documento},{self.qtdTermos})"
+
+
+class InvertedIndexLine: #y
+    def __init__(self, word):
+        self.word = word
+        self.line = []
+
+    def addNewInvertedIndex(self, termCount):
+        self.line.append(termCount)
+
+
+    def printLine(self):
+        line = f"{self.word}: "
+
+        for obj in self.line:
+            line += obj.toString()
+        return line
+
 def splitWords(string):
     return string.split(' ');
 
@@ -34,38 +64,59 @@ def treatText(text):
     return splitWords(noStopWords)
 
 def getInvertedIndex(text, fileNumber):
-    invertedIndex = []
-
     currentArrayIndex = 0
     currentFrequency = 0
 
     for i in range(len(text)):
-        currentWord = text[i]
+        currentWord = text[i].lower()
         for palavra in text:
             if palavra.lower() == currentWord.lower():
                 currentFrequency+=1
-
-        invertedIndex.insert(currentArrayIndex, currentWord + ': ' + str(fileNumber) + ', ' + str(currentFrequency))
-        currentArrayIndex+=1
-        currentFrequency = 0
         
+        termCount = TermCount(fileNumber, currentFrequency)
+        separateFromDocuments(currentWord, termCount, fileNumber)
+
+        currentFrequency = 0
+
+    return invertedIndexArray
+
+def alreadyHasDocument(currentFileNumber, array):
+    for obj in array:
+        if (currentFileNumber == obj.documento):
+            return True
     
-    return invertedIndex
+    return False
+
+
+def separateFromDocuments(currentWord, termCount, currentFileNumber):
+    if currentWord in invertedIndexArray:
+            #palavra já registrada anteriormente
+            line = invertedIndexArray[currentWord]
+            if not alreadyHasDocument(currentFileNumber, line.line):
+                line.addNewInvertedIndex(termCount)
+                invertedIndexArray[currentWord] = line
+
+    else:
+        #palavra ainda não registrada
+        newLine = InvertedIndexLine(currentWord)
+        newLine.addNewInvertedIndex(termCount)
+        invertedIndexArray[currentWord] = newLine
+
+def printAll():
+    for line in invertedIndexArray.values():
+        print(line.printLine())
 
 def main():
     args = sys.argv
     filePaths = readFile(args[1]).split('\n')
 
-    invertedIndex = []
     fileNumber = 1
     for path in filePaths:
-            fileContent = readFile(path)
-            treatedText = treatText(fileContent)
-            result = getInvertedIndex(treatedText, fileNumber)
-            invertedIndex += result
-            fileNumber += 1
-# não está unindo o resultado aos anteriores, apenas dando append ao final do ultimo resultado
+        fileContent = readFile(path)
+        treatedText = treatText(fileContent)
+        getInvertedIndex(treatedText, fileNumber)
+        fileNumber += 1
+    
+    printAll()
 
-    return '\n'.join(invertedIndex)
-
-print(main())
+main()
