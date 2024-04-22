@@ -97,7 +97,6 @@ def main():
         interpolacao  = []
         chooseMax = []
 
-        precisao.a
         #calcula a interpolacao
         maiorPrecisao = max(precisao)
         for padraoRevocacao in range(11): #dado um padraoRevocacao(r) escolho a precisao maior ou igual ao seu correspondente
@@ -119,6 +118,15 @@ def main():
         
         matrizDeInterpolacoes.append(interpolacao)
 
-    print_matrix(matrizDeInterpolacoes)
+    medias = [0]*11 
+    for linhaPorInterpolacao in matrizDeInterpolacoes:
+        for i in range(len(linhaPorInterpolacao)):
+            medias[i] += linhaPorInterpolacao[i]
 
+    mediasFinais = []
+    for x in medias:
+        result = round(x / len(matrizDeInterpolacoes), 2)
+        mediasFinais.append(result)
+
+    writeInFile(mediasFinais)
 main()
