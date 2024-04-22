@@ -81,47 +81,50 @@ def main():
         precisao = []
         revocacao = []
 
+        interpolacao  = []
+        aux = []
+
         #calcula a precisao e revocacao
         for q in respostasSistema:
             numVisitados = numVisitados + 1
             for r in respostasIdeais:
                 if(q == r): ## o documento r é relevante
                     numRelevantes = numRelevantes + 1
-                    # calcula
-                    r = round(numRelevantes/totalRelevantes, 2)
-                    p = round(numRelevantes/numVisitados, 2)
+                    # calcula as medidas de avaliacao
+                    r = numRelevantes/totalRelevantes
+                    p = numRelevantes/numVisitados
                     
-                    precisao.append(r)
-                    revocacao.append(p) #esta certo  
-
-        interpolacao  = []
-        chooseMax = []
+                    revocacao.append(r)
+                    precisao.append(p) #esta certo  
 
         #calcula a interpolacao
-        maiorPrecisao = max(precisao)
+        maiorPrecisao = max(revocacao)
         for padraoRevocacao in range(11): #dado um padraoRevocacao(r) escolho a precisao maior ou igual ao seu correspondente
-            if(not (padraoRevocacao*10 >= maiorPrecisao*100)):
-                for i in range(len(revocacao)): 
-                    p = precisao[i]
-                    r = revocacao[i]
+            if(not (padraoRevocacao*10 > maiorPrecisao*100)): #calcula apenas as precisoes e revocacoes maiores ou iguais a de interesse
+                for i in range(len(precisao)): 
+                    p = revocacao[i]
+                    r = precisao[i]
 
                     if(padraoRevocacao*10 <= p*100):
                         #print(r)
-                        chooseMax.append(r)
+                        aux.append(r)
                     
-                maior = max(chooseMax)
-                chooseMax.clear()
+                maior = max(aux)
+                aux.clear()
                 interpolacao.append(maior)
                 #print("maior: " + str(maior))
             else:
                 interpolacao.append(0)
-        
+
         matrizDeInterpolacoes.append(interpolacao)
 
     medias = [0]*11 
     for linhaPorInterpolacao in matrizDeInterpolacoes:
         for i in range(len(linhaPorInterpolacao)):
             medias[i] += linhaPorInterpolacao[i]
+
+    # print_matrix(matrizDeInterpolacoes)
+    # print(medias)
 
     mediasFinais = []
     for x in medias:
