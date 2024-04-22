@@ -1,7 +1,7 @@
 import sys
-import math
+import matplotlib.pyplot as plt
 
-def readReferenceCollection(filepath):
+def readEnty(filepath):
     cMatrix = []
 
     with open(filepath, 'r') as file:
@@ -16,7 +16,7 @@ def readReferenceCollection(filepath):
 def print_matrix(matrix):
     for row in matrix:
         for element in row:
-            print(element, end=" ")  # Imprime o elemento seguido de um espaço
+            print(element, end=" ")
         print() 
     
 def writeInFile(media):
@@ -24,36 +24,35 @@ def writeInFile(media):
     asString = ' '.join(asString)
 
     with open('media.txt', 'w') as file:
-        file.write(asString)
+        file.write(asString)    
 
-def calcInterpolacao(precisao, revocacao):
-    interpolacao  = []
-    chooseMax = []
+def plotSingleGraph(entry):
+    plt.plot(entry)
+    plt.title("Media")
+    plt.show()
 
-    maiorPrecisao = max(precisao)
-    for padraoRevocacao in range(11): #dado um padraoRevocacao(r) escolho a precisao maior ou igual ao seu correspondente
-        if(not (padraoRevocacao*10 >= maiorPrecisao*100)):
-            for i in range(len(revocacao)): 
-                p = precisao[i]
-                r = revocacao[i]
+def plotGraphs(entries):
+    graphsNum = len(entries)
+    
+    if graphsNum == 1:
+        fig, ax = plt.subplots(figsize=(10, 3))  # Create single axis
+        ax.plot(entries[0])
+        ax.set_title("Consulta 0")  # Adjust title index if necessary
+    else:
+        fig, axs = plt.subplots(1, graphsNum, figsize=(10, 3))
+        for i in range(graphsNum):
+            axs[i].plot(entries[i])
+            axs[i].set_title("Consulta " + str(i))
 
-                if(padraoRevocacao*10 <= p*100):
-                    #print(r)
-                    chooseMax.append(r)
-                
-            maior = max(chooseMax)
-            chooseMax.clear()
-            interpolacao.append(maior)
-            #print("maior: " + str(maior))
-        else:
-            interpolacao.append(0)
-            
+    plt.tight_layout()
+    plt.show()
+
 
 def main():
     arg = sys.argv
     filepath = arg[1]
 
-    cMatrix = readReferenceCollection(filepath)
+    cMatrix = readEnty(filepath)
     
     mLen = len(cMatrix)
     referenceCollection = []
@@ -65,71 +64,60 @@ def main():
         else:
             consultResponse.append(cMatrix[i])
 
-    #colecaoReferencia = ["d12", "d56", "d9", "d25", "d3"]
-    #consulta = ["d12", "d84", "d56", "d6", "d8", "d9", "d51", "d19", "d18", "d25", "d38", "d48", "d27", "d11", "d3"]
-
     matrizDeInterpolacoes = []
-    aux = 0
 
     for i in range(int(mLen/2)):
         respostasSistema = consultResponse[i]
         respostasIdeais = referenceCollection[i]
 
-        numVisitados = 0
-        numRelevantes = 0
-        totalRelevantes = len(respostasIdeais)
-        precisao = []
-        revocacao = []
+        visitedNum = 0
+        relevantNum = 0
+        allRelevants = len(respostasIdeais)
+        precision = []
+        revocation = []
+        interpolation  = []
 
-        interpolacao  = []
-        aux = []
-
-        #calcula a precisao e revocacao
-        for q in respostasSistema:
-            numVisitados = numVisitados + 1
-            for r in respostasIdeais:
-                if(q == r): ## o documento r é relevante
-                    numRelevantes = numRelevantes + 1
-                    # calcula as medidas de avaliacao
-                    r = numRelevantes/totalRelevantes
-                    p = numRelevantes/numVisitados
-                    
-                    revocacao.append(r)
-                    precisao.append(p) #esta certo  
+        #calcula metricas
+        for system_response in respostasSistema:
+            visitedNum += 1
+            for ideal_response in respostasIdeais:
+                if system_response == ideal_response:
+                    relevantNum += 1
+                    #separa as matrizes de resposta
+                    revocation.append(relevantNum / allRelevants)
+                    precision.append(relevantNum / visitedNum)
+                    break
 
         #calcula a interpolacao
-        maiorPrecisao = max(revocacao)
-        for padraoRevocacao in range(11): #dado um padraoRevocacao(r) escolho a precisao maior ou igual ao seu correspondente
-            if(not (padraoRevocacao*10 > maiorPrecisao*100)): #calcula apenas as precisoes e revocacoes maiores ou iguais a de interesse
-                for i in range(len(precisao)): 
-                    p = revocacao[i]
-                    r = precisao[i]
+        maiorPrecisao = max(revocation)
+        for padraoRevocacao in range(11):
+            if padraoRevocacao * 10 <= maiorPrecisao * 100: #calcula apenas as precisões das revocações maiores ou iguais a de interesse
+                #calculando max(p()) para o nivel padrão x de revocação em tuplas
+                relevant_precisions = []
+                for p, r in zip(precision, revocation):
+                    if r * 100 >= padraoRevocacao * 10: #verificando valores de interesse
+                        relevant_precisions.append(p)
 
-                    if(padraoRevocacao*10 <= p*100):
-                        #print(r)
-                        aux.append(r)
-                    
-                maior = max(aux)
-                aux.clear()
-                interpolacao.append(maior)
-                #print("maior: " + str(maior))
+                if relevant_precisions:
+                    max_precision = max(relevant_precisions)
+                    interpolation.append(max_precision)
+                else:
+                    interpolation.append(0)
             else:
-                interpolacao.append(0)
+                interpolation.append(0)
 
-        matrizDeInterpolacoes.append(interpolacao)
+        matrizDeInterpolacoes.append(interpolation)
 
-    medias = [0]*11 
-    for linhaPorInterpolacao in matrizDeInterpolacoes:
-        for i in range(len(linhaPorInterpolacao)):
-            medias[i] += linhaPorInterpolacao[i]
-
-    # print_matrix(matrizDeInterpolacoes)
-    # print(medias)
-
-    mediasFinais = []
-    for x in medias:
-        result = round(x / len(matrizDeInterpolacoes), 2)
-        mediasFinais.append(result)
+        medias = [sum(col) for col in zip(*matrizDeInterpolacoes)] #somando as colunas do vetor de media
+        mediasFinais = [round(x / len(matrizDeInterpolacoes), 2) for x in medias]  #calculando a média soma coluna/num consultas
 
     writeInFile(mediasFinais)
+
+    percentageEntry = []
+
+    for value in mediasFinais:
+        percentageEntry.append(value*100)
+    
+    plotSingleGraph(percentageEntry)
+    plotGraphs(matrizDeInterpolacoes)
 main()
