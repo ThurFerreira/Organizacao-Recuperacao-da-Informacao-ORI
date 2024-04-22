@@ -1,139 +1,123 @@
 import sys
-import spacy
+import matplotlib.pyplot as plt
 
-nlp = spacy.load("pt_core_news_lg")
-invertedIndexArray = {}
+def readEnty(filepath):
+    cMatrix = []
 
-class TermCount: #z
-    def __init__(self, documento, qtdTermos):
-        self.documento = documento
-        self.qtdTermos = qtdTermos
+    with open(filepath, 'r') as file:
+        n = int(file.readline())
+        for i in range(n*2):
+            line = file.readline().strip()
+            array = list(map(int, line.split()))
+            cMatrix.append(array)
 
-    def __str__(self):
-        return f"{self.documento},{self.qtdTermos}"
+    return cMatrix
+
+def print_matrix(matrix):
+    for row in matrix:
+        for element in row:
+            print(element, end=" ")
+        print() 
     
-    def toString(self):
-        return f"{self.documento},{self.qtdTermos} "
+def writeInFile(media):
+    asString = [str(value) for value in media]
+    asString = ' '.join(asString)
 
+    with open('media.txt', 'w') as file:
+        file.write(asString)    
 
-class InvertedIndexLine: #y
-    def __init__(self, word):
-        self.word = word
-        self.line = []
+def plotSingleGraph(entry):
+    plt.plot(entry)
+    plt.title("Media")
+    plt.show()
 
-    def addNewInvertedIndex(self, termCount):
-        self.line.append(termCount)
-
-
-    def printLine(self):
-        line = f"{self.word}: "
-
-        for obj in self.line:
-            line += obj.toString()
-        return line
-
-def splitWords(string):
-    return string.split(' ');
-
-def removeSeparators(frase):
-    separators = ".,!? "
-    frase = ["".join(caracter for caracter in palavra if caracter not in separators) for palavra in frase.split()]
+def plotGraphs(entries):
+    graphsNum = len(entries)
     
-    for i in range(len(frase)-1):
-        if not frase[i].isalpha():
-            frase = frase[:i] + frase[i + 1:]
-
-    return frase
-
-def removeStopwords(frase):
-    stopwords = nlp.Defaults.stop_words
-    doc = nlp(' '.join(frase))
-    frase = [token.text for token in doc if not token.is_stop]
-    return ' '.join(frase)
-
-
-def readFile(filePath):
-    with open(filePath, 'r') as file:
-        content = file.read()
-    return content
-
-def lemmatizeText(text):
-    doc = nlp(text)
-    lemmatizedText = []
-
-    for token in doc:
-
-        if token.pos_ == "VERB":
-            #a biblioteca spacy está definindo "engracada" como um verbo
-            lemmatizedText.append(token.lemma_)
-        else:
-            lemmatizedText.append(token.text)
-
-    return ' '.join(lemmatizedText)
-
-
-def treatText(text):
-    noSeparator = removeSeparators(text)
-    noStopWords = removeStopwords(noSeparator)
-    lemmatizedText = lemmatizeText(noStopWords)
-    
-    return splitWords(lemmatizedText)
-
-def getInvertedIndex(text, fileNumber):
-    currentArrayIndex = 0
-    currentFrequency = 0
-
-    for i in range(len(text)):
-        currentWord = text[i].lower()
-        for palavra in text:
-            if palavra.lower() == currentWord.lower():
-                currentFrequency+=1
-        
-        termCount = TermCount(fileNumber, currentFrequency)
-        separateFromDocuments(currentWord, termCount, fileNumber)
-
-        currentFrequency = 0
-
-    return invertedIndexArray
-
-def alreadyHasDocument(currentFileNumber, array):
-    for obj in array:
-        if (currentFileNumber == obj.documento):
-            return True
-    
-    return False
-
-
-def separateFromDocuments(currentWord, termCount, currentFileNumber):
-    if currentWord in invertedIndexArray:
-            #palavra já registrada anteriormente
-            line = invertedIndexArray[currentWord]
-            if not alreadyHasDocument(currentFileNumber, line.line):
-                line.addNewInvertedIndex(termCount)
-                invertedIndexArray[currentWord] = line
-
+    if graphsNum == 1:
+        fig, ax = plt.subplots(figsize=(10, 3))  # Create single axis
+        ax.plot(entries[0])
+        ax.set_title("Consulta 0")  # Adjust title index if necessary
     else:
-        #palavra ainda não registrada
-        newLine = InvertedIndexLine(currentWord)
-        newLine.addNewInvertedIndex(termCount)
-        invertedIndexArray[currentWord] = newLine
+        fig, axs = plt.subplots(1, graphsNum, figsize=(10, 3))
+        for i in range(graphsNum):
+            axs[i].plot(entries[i])
+            axs[i].set_title("Consulta " + str(i))
 
-def generateFile():
-    with open('indice.txt', 'w') as file:
-        for line in invertedIndexArray.values():
-            file.write(line.printLine() + '\n')
+    plt.tight_layout()
+    plt.show()
+
 
 def main():
-    args = sys.argv
-    filePaths = readFile(args[1]).split('\n')
+    arg = sys.argv
+    filepath = arg[1]
 
-    fileNumber = 1
-    for path in filePaths:
-        fileContent = readFile(path)
-        treatedText = treatText(fileContent)
-        getInvertedIndex(treatedText, fileNumber)
-        fileNumber += 1
+    cMatrix = readEnty(filepath)
     
-    generateFile()
+    mLen = len(cMatrix)
+    referenceCollection = []
+    consultResponse = []
 
+    for i in range(mLen):
+        if(i < mLen/2):
+            referenceCollection.append(cMatrix[i])
+        else:
+            consultResponse.append(cMatrix[i])
+
+    matrizDeInterpolacoes = []
+
+    for i in range(int(mLen/2)):
+        respostasSistema = consultResponse[i]
+        respostasIdeais = referenceCollection[i]
+
+        visitedNum = 0
+        relevantNum = 0
+        allRelevants = len(respostasIdeais)
+        precision = []
+        revocation = []
+        interpolation  = []
+
+        #calcula metricas
+        for system_response in respostasSistema:
+            visitedNum += 1
+            for ideal_response in respostasIdeais:
+                if system_response == ideal_response:
+                    relevantNum += 1
+                    #separa as matrizes de resposta
+                    revocation.append(relevantNum / allRelevants)
+                    precision.append(relevantNum / visitedNum)
+                    break
+
+        #calcula a interpolacao
+        maiorPrecisao = max(revocation)
+        for padraoRevocacao in range(11):
+            if padraoRevocacao * 10 <= maiorPrecisao * 100: #calcula apenas as precisões das revocações maiores ou iguais a de interesse
+                #calculando max(p()) para o nivel padrão x de revocação em tuplas
+                relevant_precisions = []
+                for p, r in zip(precision, revocation):
+                    if r * 100 >= padraoRevocacao * 10: #verificando valores de interesse
+                        relevant_precisions.append(p)
+
+                if relevant_precisions:
+                    max_precision = max(relevant_precisions)
+                    interpolation.append(max_precision)
+                else:
+                    interpolation.append(0)
+            else:
+                interpolation.append(0)
+
+        matrizDeInterpolacoes.append(interpolation)
+
+        medias = [sum(col) for col in zip(*matrizDeInterpolacoes)] #somando as colunas do vetor de media
+        mediasFinais = [round(x / len(matrizDeInterpolacoes), 2) for x in medias]  #calculando a média soma coluna/num consultas
+
+    writeInFile(mediasFinais)
+
+    percentageEntry = []
+
+    for value in mediasFinais:
+        percentageEntry.append(value*100)
+    
+    plotSingleGraph(percentageEntry)
+    plotGraphs(matrizDeInterpolacoes)
 main()
